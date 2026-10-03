@@ -47,7 +47,7 @@ initialize_database()
 
 @app.get("/", include_in_schema=False)
 def serve_homepage() -> FileResponse:
-    index_path = Path(__file__).with_name("static") / "index.html"
+    index_path = Path(__file__).with_name("index.html")
     if not index_path.exists():
         raise HTTPException(status_code=404, detail="No existe la página principal.")
     return FileResponse(index_path)
