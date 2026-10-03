@@ -6,9 +6,10 @@ from collections import defaultdict
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
@@ -23,6 +24,23 @@ DATABASE_PATH = Path(os.getenv("DATABASE_PATH", Path(__file__).with_name("finanz
 admin_security = HTTPBasic(auto_error=False)
 QUIZ_QUESTION_COUNT = 8
 QUIZ_ANSWER_KEY = [1, 0, 1, 1, 0, 1, 1, 1]
+LEADERBOARD_LEVELS = {
+    "basico": {"questions": 5, "points_per_answer": 1},
+    "medio": {"questions": 5, "points_per_answer": 2},
+    "avanzado": {"questions": 7, "points_per_answer": 3},
+    "experto": {"questions": 10, "points_per_answer": 4},
+}
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://deluxe-strudel-b85556.netlify.app",
+        "http://127.0.0.1:8003",
+        "http://localhost:8003",
+    ],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+)
 
 
 def get_connection() -> sqlite3.Connection:
@@ -43,6 +61,21 @@ def initialize_database() -> None:
                 description TEXT NOT NULL DEFAULT '',
                 spent_on TEXT NOT NULL,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS quiz_leaderboard (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                player_name TEXT COLLATE NOCASE NOT NULL,
+                level TEXT NOT NULL,
+                score INTEGER NOT NULL,
+                correct_count INTEGER NOT NULL,
+                question_count INTEGER NOT NULL,
+                played_on TEXT NOT NULL,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE (played_on, level, player_name)
             )
             """
         )
@@ -97,6 +130,13 @@ class QuizResultIn(BaseModel):
         min_length=QUIZ_QUESTION_COUNT,
         max_length=QUIZ_QUESTION_COUNT,
     )
+
+
+class LeaderboardEntryIn(BaseModel):
+    player_name: str = Field(min_length=2, max_length=32)
+    level: Literal["basico", "medio", "avanzado", "experto"]
+    correct_count: int = Field(ge=0)
+    question_count: int = Field(ge=1, le=10)
 
 
 def quiz_level(score: int) -> str:
@@ -206,6 +246,85 @@ def list_quiz_results(_: None = Depends(require_admin)) -> dict:
         "count": count,
         "by_level": by_level,
         "results": [dict(row) for row in result_rows],
+    }
+
+
+@app.post("/leaderboard", status_code=201, summary="Guardar mejor puntaje diario")
+def save_leaderboard_entry(entry: LeaderboardEntryIn) -> dict:
+    player_name = " ".join(entry.player_name.split())
+    if not re.fullmatch(r"[\wÀ-ÿ -]{2,32}", player_name, flags=re.UNICODE):
+        raise HTTPException(status_code=422, detail="El alias solo puede usar letras, números, espacios y guiones.")
+
+    settings = LEADERBOARD_LEVELS[entry.level]
+    if entry.question_count != settings["questions"] or entry.correct_count > entry.question_count:
+        raise HTTPException(status_code=422, detail="La cantidad de preguntas no corresponde al nivel.")
+
+    score = entry.correct_count * settings["points_per_answer"]
+    with get_connection() as connection:
+        played_on = connection.execute("SELECT date('now')").fetchone()[0]
+        connection.execute(
+            """
+            INSERT INTO quiz_leaderboard (
+                player_name, level, score, correct_count, question_count, played_on
+            ) VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT (played_on, level, player_name) DO UPDATE SET
+                score = excluded.score,
+                correct_count = excluded.correct_count,
+                question_count = excluded.question_count,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE excluded.score > quiz_leaderboard.score
+               OR (excluded.score = quiz_leaderboard.score
+                   AND excluded.correct_count > quiz_leaderboard.correct_count)
+            """,
+            (player_name, entry.level, score, entry.correct_count, entry.question_count, played_on),
+        )
+        stored = connection.execute(
+            "SELECT player_name, score, correct_count, question_count, updated_at "
+            "FROM quiz_leaderboard WHERE played_on = ? AND level = ? AND player_name = ?",
+            (played_on, entry.level, player_name),
+        ).fetchone()
+        rank = connection.execute(
+            """
+            SELECT COUNT(*) + 1 FROM quiz_leaderboard
+            WHERE played_on = ? AND level = ?
+              AND (score > ? OR (score = ? AND correct_count > ?))
+            """,
+            (played_on, entry.level, stored["score"], stored["score"], stored["correct_count"]),
+        ).fetchone()[0]
+
+    return {
+        "date": played_on,
+        "level": entry.level,
+        "player_name": stored["player_name"],
+        "score": stored["score"],
+        "correct_count": stored["correct_count"],
+        "question_count": stored["question_count"],
+        "rank": rank,
+    }
+
+
+@app.get("/leaderboard", summary="Consultar posiciones del día")
+def get_leaderboard(level: Literal["basico", "medio", "avanzado", "experto"]) -> dict:
+    settings = LEADERBOARD_LEVELS[level]
+    with get_connection() as connection:
+        today = connection.execute("SELECT date('now')").fetchone()[0]
+        rows = connection.execute(
+            """
+            SELECT player_name, score, correct_count, question_count, updated_at
+            FROM quiz_leaderboard
+            WHERE played_on = ? AND level = ?
+            ORDER BY score DESC, correct_count DESC, updated_at ASC
+            LIMIT 50
+            """,
+            (today, level),
+        ).fetchall()
+
+    return {
+        "date": today,
+        "level": level,
+        "questions_per_game": settings["questions"],
+        "points_per_answer": settings["points_per_answer"],
+        "results": [dict(row, rank=index) for index, row in enumerate(rows, start=1)],
     }
 
 
