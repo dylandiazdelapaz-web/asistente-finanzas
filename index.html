@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Asistente Finanzas</title>
+    <style>
+      :root {
+        --bg: #f3f7ff;
+        --card: #ffffff;
+        --primary: #1f6feb;
+        --primary-dark: #144fb5;
+        --text: #1b2430;
+        --muted: #677489;
+        --danger: #d64545;
+        --success: #198754;
+        --border: #e6ecf5;
+        --shadow: 0 18px 40px rgba(10, 51, 94, 0.12);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        background: linear-gradient(180deg, #edf5ff 0%, #f8fbff 100%);
+        color: var(--text);
+      }
+
+      .container {
+        max-width: 1100px;
+        margin: 32px auto;
+        padding: 24px;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .title {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0;
+      }
+
+      .subtitle {
+        color: var(--muted);
+        margin-top: 6px;
+      }
+
+      .badge {
+        background: #eaf3ff;
+        color: var(--primary-dark);
+        border: 1px solid #d3e6ff;
+        font-weight: 700;
+        border-radius: 999px;
+        padding: 10px 16px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1.05fr 1.45fr;
+        gap: 24px;
+      }
+
+      .panel {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        box-shadow: var(--shadow);
+        padding: 22px;
+      }
+
+      h2 {
+        margin-top: 0;
+        margin-bottom: 18px;
+        font-size: 1.3rem;
+      }
+
+      form {
+        display: grid;
+        gap: 14px;
+      }
+
+      .field {
+        display: grid;
+        gap: 8px;
+      }
+
+      label {
+        font-weight: 700;
+        font-size: 0.95rem;
+      }
+
+      input, select, textarea, button {
+        font: inherit;
+      }
+
+      input, select, textarea {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px 14px;
+        background: #fbfcff;
+        color: var(--text);
+      }
+
+      textarea {
+        min-height: 90px;
+        resize: vertical;
+      }
+
+      button {
+        border: none;
+        border-radius: 12px;
+        padding: 12px 16px;
+        cursor: pointer;
+        transition: 0.2s ease;
+      }
+
+      .primary {
+        background: var(--primary);
+        color: white;
+        font-weight: 700;
+      }
+
+      .primary:hover { background: var(--primary-dark); }
+
+      .secondary {
+        background: #ecf4ff;
+        color: var(--primary-dark);
+        font-weight: 700;
+      }
+
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 18px;
+        margin-bottom: 22px;
+      }
+
+      .metric {
+        background: #f8fbff;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 16px;
+      }
+
+      .metric-label {
+        color: var(--muted);
+        font-size: 0.8rem;
+      }
+
+      .metric-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-top: 8px;
+      }
+
+      .list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 10px;
+      }
+
+      .list li {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        background: #fbfcff;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 14px;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .alert {
+        display: none;
+        margin-top: 12px;
+        padding: 12px 14px;
+        border-radius: 10px;
+        font-weight: 700;
+      }
+
+      .alert.show {
+        display: block;
+      }
+
+      .alert.error {
+        background: #fdecec;
+        color: var(--danger);
+      }
+
+      .alert.success {
+        background: #ebf9f1;
+        color: var(--success);
+      }
+
+      @media (max-width: 860px) {
+        .grid { grid-template-columns: 1fr; }
+        .summary-grid { grid-template-columns: 1fr; }
+        .header { flex-direction: column; align-items: flex-start; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div>
+          <h1 class="title">Asistente Finanzas</h1>
+          <div class="subtitle">Tu guía para controlar gastos, ahorrar y ordenar tus finanzas</div>
+        </div>
+        <div class="badge">MVP</div>
+      </div>
+
+      <div class="grid">
+        <section class="panel">
+          <h2>Registrar gasto</h2>
+          <form id="expense-form">
+            <div class="field">
+              <label for="user_id">Usuario</label>
+              <input id="user_id" name="user_id" value="user-demo" required />
+            </div>
+
+            <div class="field">
+              <label for="amount">Monto</label>
+              <input id="amount" name="amount" type="number" step="0.01" min="0.01" required />
+            </div>
+
+            <div class="field">
+              <label for="category">Categoría</label>
+              <select id="category" name="category">
+                <option value="alimentacion">Alimentación</option>
+                <option value="transporte">Transporte</option>
+                <option value="vivienda">Vivienda</option>
+                <option value="salud">Salud</option>
+                <option value="educacion">Educación</option>
+                <option value="deudas">Deudas</option>
+                <option value="ahorro">Ahorro</option>
+                <option value="otros">Otros</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="description">Descripción</label>
+              <textarea id="description" name="description" placeholder="Ejemplo: Metro, comida, farmacia..."></textarea>
+            </div>
+
+            <div class="field">
+              <label for="spent_on">Fecha</label>
+              <input id="spent_on" name="spent_on" type="date" />
+            </div>
+
+            <button class="primary" type="submit">Guardar gasto</button>
+          </form>
+
+          <div id="form-alert" class="alert"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Resumen mensual</h2>
+
+          <div class="field" style="margin-bottom: 16px;">
+            <label for="summary-user">Usuario</label>
+            <input id="summary-user" value="user-demo" />
+          </div>
+
+          <div style="display:flex; gap:10px; margin-bottom:16px;">
+            <div class="field" style="flex: 1;">
+              <label for="summary-year">Año</label>
+              <input id="summary-year" type="number" value="2026" />
+            </div>
+            <div class="field" style="flex: 1;">
+              <label for="summary-month">Mes</label>
+              <input id="summary-month" type="number" min="1" max="12" value="9" />
+            </div>
+          </div>
+
+          <button class="secondary" id="load-summary" type="button">Consultar resumen</button>
+
+          <div class="summary-grid">
+            <div class="metric">
+              <div class="metric-label">Total</div>
+              <div id="total-value" class="metric-value">$0</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Registros</div>
+              <div id="count-value" class="metric-value">0</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Periodo</div>
+              <div id="period-value" class="metric-value">-</div>
+            </div>
+          </div>
+
+          <ul id="category-list" class="list"></ul>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      const apiUrl = window.location.origin;
+
+      const form = document.getElementById('expense-form');
+      const formAlert = document.getElementById('form-alert');
+      const userIdInput = document.getElementById('user_id');
+      const summaryUserInput = document.getElementById('summary-user');
+      const loadSummaryButton = document.getElementById('load-summary');
+
+      function setAlert(message, kind) {
+        formAlert.textContent = message;
+        formAlert.className = `alert show ${kind}`;
+      }
+
+      function formatCurrency(value) {
+        return new Intl.NumberFormat('es-CL', {
+          style: 'currency',
+          currency: 'CLP',
+          maximumFractionDigits: 0,
+        }).format(Number(value || 0));
+      }
+
+      async function fetchSummary() {
+        const userId = summaryUserInput.value.trim();
+        const year = document.getElementById('summary-year').value;
+        const month = document.getElementById('summary-month').value;
+
+        if (!userId) {
+          setAlert('Debes ingresar un usuario para consultar el resumen.', 'error');
+          return;
+        }
+
+        const response = await fetch(`${apiUrl}/users/${encodeURIComponent(userId)}/summary?year=${year}&month=${month}`);
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.detail || 'No se pudo consultar el resumen.');
+        }
+
+        const data = await response.json();
+        document.getElementById('total-value').textContent = formatCurrency(data.total);
+        document.getElementById('count-value').textContent = data.count;
+        document.getElementById('period-value').textContent = data.period;
+
+        const list = document.getElementById('category-list');
+        list.innerHTML = '';
+
+        const entries = Object.entries(data.by_category || {});
+
+        if (!entries.length) {
+          list.innerHTML = '<li><span class="muted">Sin registros este mes</span><span></span></li>';
+          return;
+        }
+
+        for (const [category, amount] of entries) {
+          const item = document.createElement('li');
+          item.innerHTML = `<span>${category}</span><strong>${formatCurrency(amount)}</strong>`;
+          list.appendChild(item);
+        }
+      }
+
+      form.addEventListener('submit', async function (event) {
+        event.preventDefault();
+
+        const payload = {
+          user_id: userIdInput.value.trim(),
+          amount: Number(document.getElementById('amount').value),
+          category: document.getElementById('category').value,
+          description: document.getElementById('description').value.trim(),
+          spent_on: document.getElementById('spent_on').value || new Date().toISOString().slice(0, 10),
+        };
+
+        if (!payload.user_id || !payload.amount) {
+          setAlert('Debes completar usuario y monto.', 'error');
+          return;
+        }
+
+        try {
+          const response = await fetch(`${apiUrl}/expenses`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data.detail || 'Error al registrar el gasto.');
+          }
+
+          setAlert('Gasto registrado correctamente.', 'success');
+          form.reset();
+          userIdInput.value = payload.user_id;
+          summaryUserInput.value = payload.user_id;
+          await fetchSummary();
+        } catch (error) {
+          setAlert(error.message, 'error');
+        }
+      });
+
+      loadSummaryButton.addEventListener('click', async function () {
+        try {
+          await fetchSummary();
+        } catch (error) {
+          setAlert(error.message, 'error');
+        }
+      });
+
+      summaryUserInput.addEventListener('change', function () {
+        userIdInput.value = summaryUserInput.value;
+      });
+
+      fetchSummary();
+    </script>
+  </body>
+</html>
