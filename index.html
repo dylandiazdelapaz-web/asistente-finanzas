@@ -206,6 +206,43 @@
         color: var(--success);
       }
 
+      .quiz-panel, .admin-panel { margin-top: 24px; }
+
+      .quiz-progress {
+        height: 8px;
+        margin: 10px 0 20px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #e6ecf5;
+      }
+
+      .quiz-progress-fill {
+        width: 0;
+        height: 100%;
+        background: var(--success);
+        transition: width 0.25s ease;
+      }
+
+      .quiz-options { display: grid; gap: 10px; margin-top: 18px; }
+
+      .quiz-option {
+        width: 100%;
+        border: 1px solid var(--border);
+        background: #fbfcff;
+        text-align: left;
+      }
+
+      .quiz-option:hover:not(:disabled) { border-color: var(--primary); }
+      .quiz-option.correct { border-color: var(--success); background: #ebf9f1; }
+      .quiz-option.incorrect { border-color: var(--danger); background: #fdecec; }
+      .quiz-meta { color: var(--muted); }
+      .quiz-feedback { min-height: 48px; margin: 16px 0; }
+      .quiz-result-score { font-size: 1.4rem; font-weight: 700; }
+      .quiz-result-level { margin: 8px 0; font-size: 1.8rem; }
+      .admin-summary { margin: 16px 0; }
+      .admin-panel details > summary { cursor: pointer; font-weight: 700; }
+      .admin-results-list { margin-top: 16px; }
+
       @media (max-width: 860px) {
         .grid { grid-template-columns: 1fr; }
         .summary-grid { grid-template-columns: 1fr; }
@@ -306,6 +343,51 @@
           <ul id="category-list" class="list"></ul>
         </section>
       </div>
+
+      <section class="panel quiz-panel" id="financial-quiz" aria-labelledby="quiz-title">
+        <h2 id="quiz-title">Desafío financiero</h2>
+        <p class="muted">Responde 8 situaciones cotidianas y descubre tu nivel. Es una orientación, no un examen certificado.</p>
+        <div id="quiz-stage">
+          <div class="quiz-meta" id="quiz-count" aria-live="polite">Pregunta 1 de 8</div>
+          <div class="quiz-progress" role="progressbar" aria-label="Progreso del cuestionario" aria-valuemin="0" aria-valuemax="8" aria-valuenow="0">
+            <div class="quiz-progress-fill" id="quiz-progress-fill"></div>
+          </div>
+          <h3 id="quiz-prompt" tabindex="-1"></h3>
+          <div class="quiz-options" id="quiz-options" role="group" aria-labelledby="quiz-prompt"></div>
+          <p class="quiz-feedback" id="quiz-feedback" role="status" aria-live="polite"></p>
+          <button class="primary" id="quiz-next" type="button" hidden>Siguiente pregunta</button>
+        </div>
+        <div id="quiz-result" hidden>
+          <p class="quiz-result-score" id="quiz-score"></p>
+          <h3 class="quiz-result-level" id="quiz-level"></h3>
+          <p id="quiz-advice"></p>
+          <p class="muted">Tu resultado aparece aquí. Solo se guardará si decides compartirlo con el administrador.</p>
+          <div class="field">
+            <label for="quiz-alias">Alias (opcional)</label>
+            <input id="quiz-alias" maxlength="60" autocomplete="nickname" placeholder="Por ejemplo, Alex" />
+          </div>
+          <button class="secondary" id="quiz-share" type="button" style="margin-top: 12px;">Compartir mi resultado</button>
+          <p class="quiz-meta">Al compartir, el alias (si ingresas uno), puntaje, nivel y fecha serán visibles para el administrador.</p>
+          <p id="quiz-share-status" role="status" aria-live="polite"></p>
+          <button class="secondary" id="quiz-restart" type="button">Jugar de nuevo</button>
+        </div>
+      </section>
+
+      <section class="panel admin-panel" aria-label="Administración de resultados">
+        <details>
+          <summary>Panel privado de resultados</summary>
+          <p class="muted">Acceso protegido. El administrador debe configurar la variable ADMIN_PASSWORD en Render.</p>
+          <p class="muted">La base de datos local de la demo puede borrarse al reiniciar o redesplegar el servicio.</p>
+          <div class="field">
+            <label for="admin-password">Contraseña de administrador</label>
+            <input id="admin-password" type="password" autocomplete="current-password" />
+          </div>
+          <button class="secondary" id="load-quiz-results" type="button" style="margin-top: 12px;">Consultar resultados</button>
+          <p id="admin-status" role="status" aria-live="polite"></p>
+          <div class="summary-grid admin-summary" id="admin-summary" hidden></div>
+          <ul class="list admin-results-list" id="admin-results-list"></ul>
+        </details>
+      </section>
     </div>
 
     <script>
@@ -417,8 +499,7 @@
       summaryUserInput.addEventListener('change', function () {
         userIdInput.value = summaryUserInput.value;
       });
-
-      fetchSummary();
     </script>
+    <script src="/quiz.js" defer></script>
   </body>
 </html>

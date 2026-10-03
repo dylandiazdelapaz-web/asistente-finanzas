@@ -2,6 +2,8 @@
 
 Prototipo local en español para registrar gastos y consultar resúmenes por usuario. Usa SQLite persistente y está pensado para crecer hacia WhatsApp Business Cloud API y Google Sheets, pero todavía no usa credenciales externas.
 
+Incluye un cuestionario financiero de ocho preguntas. Compartir el resultado es opcional; el panel privado requiere configurar `ADMIN_PASSWORD` como variable de entorno. En Render Free, SQLite puede reiniciarse al reiniciar o volver a desplegar el servicio, así que configura una base de datos o disco persistente antes de depender de estos resultados.
+
 ## Requisitos
 
 - Python 3.11 o superior
@@ -44,6 +46,8 @@ Ejecutar pruebas:
 ```powershell
 py -m pytest
 ```
+
+Para habilitar el panel privado localmente, define `ADMIN_PASSWORD` antes de iniciar Uvicorn. En Render, agrégala en la sección Environment del servicio y elige una contraseña larga y única.
 
 ## Siguiente etapa
 
